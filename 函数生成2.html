@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Shader Combined Demo</title>
+    <script src="/Public/js/three.min.js"></script>
+    <script src="/Public/js/OrbitControls.js"></script>
+    <script src="/Public/js/jquery-3.7.1.min.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #011936;
+        }
+
+        #threejs {
+            position: relative;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="threejs"></div>
+    <script>
+        const container = $('#threejs');
+        const width = container.width();
+        const height = container.height();
+
+        const scene = new THREE.Scene();
+
+        // 调整摄像机位置以容纳两个平面
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+        camera.position.set(0, 50, 0);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        container.append(renderer.domElement);
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.update();
+
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // 公共 Vertex Shader
+        const vertexShader = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        // 5种基础函数的公式，根据 n 的变化生成不同曲率的曲线
+        const functions = [
+            '1.0 - pow(abs(x), n)',
+            'pow(cos(PI * x / 2.0), n)',
+            '1.0 - pow(abs(sin(PI * x / 2.0)), n)',
+            'pow(min(cos(PI * x / 2.0), 1.0 - abs(x)), n)',
+            '1.0 - pow(max(0.0, abs(x) * 2.0 - 1.0), n)'
+        ];
+
+        const getFragmentShader = (funcBody) => `
+            #define PI 3.14159265359
+            uniform float u_n;
+            varying vec2 vUv;
+            void main() {
+                // 坐标映射到 [-1.0, 1.0]
+                float x = vUv.x * 2.0 - 1.0;
+                
+                // 背景对称（中间白，两边黑）
+                vec3 bgColor = vec3(1.0 - abs(x));
+                vec3 lineColor = vec3(0.0, 1.0, 0.0);
+                
+                float n = u_n;
+                float p = ${funcBody};
+                
+                // 绘制线条，线宽适当增加以保证可见度
+                float pct = 1.0 - step(0.015, abs(p - vUv.y));
+                vec3 color = mix(bgColor, lineColor, pct);
+                
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        const geometry = new THREE.PlaneGeometry(8, 8);
+        const materials = [];
+
+        // 创建 5 个平面，将它们一字排开显示
+        for (let i = 0; i < 5; i++) {
+            const mat = new THREE.ShaderMaterial({
+                vertexShader: vertexShader,
+                fragmentShader: getFragmentShader(functions[i]),
+                uniforms: {
+                    u_n: { value: 1.0 }
+                }
+            });
+            materials.push(mat);
+
+            const mesh = new THREE.Mesh(geometry, mat);
+            // 旋转平放
+            mesh.rotation.x = -Math.PI / 2;
+            // 沿 X 轴分布：-18, -9, 0, 9, 18
+            mesh.position.x = (i - 2) * 9;
+            scene.add(mesh);
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 动态改变 n 的值，使线条表现出类似原图 0.5 到 3.5 的变化动画
+            time += 0.02;
+            const currentN = Math.sin(time) * 1.5 + 2.0; // 在 0.5 到 3.5 之间平滑过渡循环
+
+            // materials.forEach(mat => {
+            //     mat.uniforms.u_n.value = currentN;
+            // });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = container.width();
+            const height = container.height();
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>
