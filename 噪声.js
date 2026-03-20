@@ -729,3 +729,149 @@ const fragmentShader15 = `
         `;
 
 
+const fragmentShader16 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            void main(){
+                float t = 4.0;
+                vec2 pos = vUv * 10.0;
+                pos += vec2(noise(pos)*t);
+                vec3 color =vec3(1.0) * smoothstep(0.18,0.2,noise(pos));
+                // color += smoothstep(0.15,0.2,noise(pos*10.0));
+                // color += smoothstep(0.35,0.41,noise(pos*10.0));
+                gl_FragColor = vec4(vec3(1.0 - color), 1.0);
+            }
+        `;
+        
+const fragmentShader17 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            void main(){
+                vec2 pos = vUv * 10.0;
+                pos += vec2(noise(pos)*4.0);
+                vec3 color =vec3(smoothstep(0.18,0.2,noise(pos*1.0)));
+                // color += smoothstep(0.15,0.2,noise(pos*10.0));
+                // color += smoothstep(0.35,0.41,noise(pos*20.0));
+
+                gl_FragColor = vec4(vec3(1.0 - color), 1.0);
+            }
+        `;
+
+const fragmentShader18 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            void main(){
+                vec2 pos = vUv * 2.0 - 1.0;
+                // float dis = abs(length(pos) - 0.78);
+                // float circle = step(0.02, dis);
+
+                float angle = atan(pos.y, pos.x);
+                angle +=u_time * 0.1;
+                float teeth = 20.0;          // 齿数
+                float strength = 0.05;       // 齿的高度
+
+                float r = length(pos);
+                r += sin(angle * teeth) * strength;
+                r += noise(vec2(angle * teeth)) * 0.03;
+
+                float dis = abs(r - 0.78);
+                float circle = step(0.02, dis);
+
+                gl_FragColor = vec4(vec3(circle), 1.0);
+            }
+        `;
+
+const fragmentShader19 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            void main(){
+                vec2 pos = vUv * 2.0 - 1.0;
+
+                float r = length(pos);
+                float a = atan(pos.y, pos.x);
+                float m = abs(mod(a + u_time * 2.0, TWO_PI) - PI) / 3.6;
+                m += noise(pos + u_time * 0.1) * 0.5;
+                float f = 0.78;
+                f += sin(a * 50.0) * noise(pos + u_time * 0.2) * 0.1;
+                f += sin(a * 20.0) * 0.1 * pow(m, 2.0);
+                float dis = abs(r - f);
+                float circle = smoothstep(0.02,0.021, dis);
+                gl_FragColor = vec4(vec3(circle), 1.0);
+            }
+        `;
