@@ -1,4 +1,3 @@
-
 const vertexShader = `
             varying vec2 vUv;
             void main() {
@@ -30,11 +29,33 @@ const fragmentShader1 = `
                 return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) +  (d - b) * u.x * u.y;
             }
 
-            void main(){
-                vec2 pos = vec2(vUv * 5.0) ;
-                float n = noise(pos);
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
 
-                gl_FragColor = vec4(vec3(n), 1.0);
+
+            void main(){
+                vec2 uv = vUv  ;
+                uv *= 10.0;
+
+                // float n = noise(uv * 10.0);
+                
+                // float n = fbm(uv)*0.5 + 0.5;
+
+                uv += vec2(fbm(uv + vec2(1.0,0.0)), fbm(uv + vec2(0.0,1.0)));
+                float n = fbm(uv)*0.5 + 0.5;
+
+                vec3 color = vec3(smoothstep(0.2, 0.75, n));
+                gl_FragColor = vec4(color, 1.0);
+
             }
         `;
 
@@ -369,10 +390,31 @@ const fragmentShader7 = `
                 return mix(mix(random(ipos + vec2(0.0, 0.0)),random(ipos + vec2(1.0, 0.0)), u.x), mix(random(ipos + vec2(0.0, 1.0)), random(ipos + vec2(1.0, 1.0)), u.x), u.y);
             }
 
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
             void main(){
-                vec2 pos = vec2(vUv * 10.0);
-    
-                gl_FragColor = vec4(vec3(noise(pos)*.5+.5), 1.0);
+                vec2 uv = vUv  ;
+                uv *= 3.0;
+
+                // float n = noise(uv * 10.0);
+                
+                // float n = fbm(uv)*0.5 + 0.5;
+
+                uv += vec2(fbm(uv + vec2(1.0,0.0)), fbm(uv + vec2(0.0,1.0)));
+                float n = fbm(uv)*0.5 + 0.5;
+
+                vec3 color = vec3(smoothstep(0.2, 0.75, n));
+                gl_FragColor = vec4(color, 1.0);
             }
         `;
 
@@ -398,10 +440,31 @@ const fragmentShader8 = `
                                dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
             }
 
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
             void main(){
-                vec2 pos = vec2(vUv * 10.0);
-    
-                gl_FragColor = vec4(vec3(noise(pos)*.5+.5), 1.0);
+                vec2 uv = vUv  ;
+                uv *= 3.0;
+
+                // float n = noise(uv * 10.0);
+                
+                // float n = fbm(uv)*0.5 + 0.5;
+
+                uv += vec2(fbm(uv + vec2(1.0,0.0)), fbm(uv + vec2(0.0,1.0)));
+                float n = fbm(uv)*0.5 + 0.5;
+
+                vec3 color = vec3(smoothstep(0.2, 0.75, n));
+                gl_FragColor = vec4(color, 1.0);
             }
         `;
 
@@ -756,8 +819,8 @@ const fragmentShader16 = `
                 vec2 pos = vUv * 10.0;
                 pos += vec2(noise(pos)*t);
                 vec3 color =vec3(1.0) * smoothstep(0.18,0.2,noise(pos));
-                // color += smoothstep(0.15,0.2,noise(pos*10.0));
-                // color += smoothstep(0.35,0.41,noise(pos*10.0));
+                color += smoothstep(0.15,0.2,noise(pos*10.0));
+                color += smoothstep(0.35,0.41,noise(pos*10.0));
                 gl_FragColor = vec4(vec3(1.0 - color), 1.0);
             }
         `;
@@ -788,8 +851,8 @@ const fragmentShader17 = `
                 vec2 pos = vUv * 10.0;
                 pos += vec2(noise(pos)*4.0);
                 vec3 color =vec3(smoothstep(0.18,0.2,noise(pos*1.0)));
-                // color += smoothstep(0.15,0.2,noise(pos*10.0));
-                // color += smoothstep(0.35,0.41,noise(pos*20.0));
+                color += smoothstep(0.15,0.2,noise(pos*10.0));
+                color += smoothstep(0.35,0.41,noise(pos*20.0));
 
                 gl_FragColor = vec4(vec3(1.0 - color), 1.0);
             }
@@ -873,5 +936,334 @@ const fragmentShader19 = `
                 float dis = abs(r - f);
                 float circle = smoothstep(0.02,0.021, dis);
                 gl_FragColor = vec4(vec3(circle), 1.0);
+            }
+        `;
+
+const fragmentShader20 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            void main(){
+                vec2 pos = vUv;
+
+                vec2 warp = vec2(noise(pos*4.0),noise(pos*4.0 + 10.0));
+                pos += warp * 0.2;
+                float n1 = noise(pos * 4.0);
+                float n2 = noise(pos * 20.0);
+                float n3 = noise(pos * 80.0);
+
+                vec3 pink  = vec3(0.75, 0.45, 0.35);
+                vec3 gray = vec3(0.6);
+                vec3 black = vec3(0.1);
+
+                vec3 color = pink;
+
+                color = mix(color, gray, vec3(smoothstep(0.3,0.6,n2)));
+                color = mix(color, black, vec3(smoothstep(0.6,0.8,n3)));
+                color *= 0.8 + 0.4 * n1;
+                gl_FragColor = vec4(vec3( color), 1.0);
+            }
+        `;
+
+const fragmentShader21 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                float t = u_time * 0.02;
+                uv += vec2(fbm(uv + t), fbm(uv - t));
+                // uv += vec2(fbm(uv ), fbm(uv ));
+
+                float n = fbm(uv)*0.5 + 0.5;
+
+                float cracks = smoothstep(0.4, 0.7, n);
+                vec3 color = mix(
+                    vec3(0.05, 0.0, 0.0),
+                    vec3(1.0, 0.3, 0.0),
+                    cracks
+                );
+                color += pow(cracks, 3.0) * vec3(1.0, 0.8, 0.2);
+                        
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+const fragmentShader22 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                
+                uv *= 3.0;
+                // uv += vec2(fbm(uv ), fbm(uv ));
+                uv += vec2(fbm(uv  + vec2(1.0, 0.0)), fbm(uv + vec2(0.0, 1.0)));
+
+                float n = fbm(uv)*0.5 + 0.5;
+                float smoke = smoothstep(0.2, 0.75, n);
+                vec3 color = vec3(smoke);
+                    
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+const fragmentShader23 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                float t = u_time * 0.02;
+                uv += vec2(fbm(uv + t), fbm(uv - t));
+
+                float wave = sin(uv.x * 10.0 + t) * 0.05 + sin(uv.y * 15.0 - t * 1.2) * 0.05;
+                float n = fbm(uv+wave);   
+                vec3 deepWater = vec3(0.0, 0.1, 0.3);
+                vec3 shallowWater = vec3(0.0, 0.5, 0.8);
+                vec3 color = mix(deepWater, shallowWater, n);
+                float highlight = pow(n, 4.0);
+                color += highlight * vec3(0.6, 0.8, 1.0);    
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+const fragmentShader24 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            float geometrySDF(vec2 uv, vec2 center){
+                vec2 p = uv - center;
+                float a = atan(p.y, p.x);
+                int N = 3;
+                float r = TWO_PI/float(N);
+                return cos(floor(0.5 + a/r)*r - a) * length(p);
+            }
+
+            float geometrySDFN(vec2 uv, vec2 center,float time){
+                vec2 p = uv - center;
+                float a = atan(p.y, p.x);
+                int N = 3;
+                float r = TWO_PI/float(N);
+                float n = noise(uv*3.0 + time);
+                return cos(floor(0.5 + a/r)*r - a) * length(p) + n * 0.3;
+            }
+
+            void main(){
+                // vec2 uv = vUv;
+                // float t = u_time * 0.2;
+
+                // uv += vec2(fbm(uv + t), fbm(uv - t));
+                // vec2 center = vec2(0.5, 0.5);
+                // float geo = geometrySDF(uv, center);
+
+                // vec2 center = vec2(0.5 + 0.2 * noise(vec2(t, 0.0)), 0.5 + 0.2 * noise(vec2(0.0, t)));
+                // float geo = geometrySDF(uv, center);
+                
+                // vec2 center = vec2(0.5);
+                // float geo = geometrySDFN(uv, center,t);
+
+                // vec2 warp = vec2(fbm(uv + t), fbm(uv + vec2(5.2,1.3) - t));
+                // uv += warp * 0.2;
+                // uv += vec2(fbm(uv * 2.0), fbm(uv * 2.0 + 10.0)) * 0.1;
+                // vec2 center = vec2(0.5, 0.5);
+                // float geo = geometrySDF(uv, center);
+
+                // vec3 color = vec3(step(0.1, geo));
+                // gl_FragColor = vec4(color, 1.0);
+
+                vec2 uv = vUv;
+                float t = u_time * 0.2;
+                vec2 grid = floor(uv * 2.0);   // (0,0) (1,0) (0,1) (1,1)
+                vec2 localUV = fract(uv * 2.0); // 每个象限内部的 uv
+
+                float geo = 0.0;
+
+                if (grid.x == 0.0 && grid.y == 0.0) {
+                    // 左下：原始 fbm 扭曲
+                    vec2 uv2 = localUV;
+                    uv2 += vec2(fbm(uv2 + t), fbm(uv2 - t));
+                    geo = geometrySDF(uv2, vec2(0.5));
+                }
+
+                else if (grid.x == 1.0 && grid.y == 0.0) {
+                    // 右下：中心乱跑
+                    vec2 center = vec2(
+                        0.5 + 0.2 * noise(vec2(t, 0.0)),
+                        0.5 + 0.2 * noise(vec2(0.0, t))
+                    );
+                    geo = geometrySDF(localUV, center);
+                }
+
+                else if (grid.x == 0.0 && grid.y == 1.0) {
+                    // 左上：形状被 noise 扭曲
+
+                    // float base = geometrySDF(localUV, vec2(0.5));
+                    // base += fbm(localUV * 3.0 + t) * 0.1;
+                    // geo = base;
+                    
+                    geo = geometrySDFN(localUV, vec2(0.5), t);
+                }
+
+                else {
+                    // 右上：高级 domain warping
+                    vec2 uv2 = localUV;
+
+                    vec2 warp = vec2(
+                        fbm(uv2 + t),
+                        fbm(uv2 + vec2(5.2,1.3) - t)
+                    );
+
+                    uv2 += warp * 0.2;
+                    uv2 += vec2(
+                        fbm(uv2 * 2.0),
+                        fbm(uv2 * 2.0 + 10.0)
+                    ) * 0.1;
+
+                    geo = geometrySDF(uv2, vec2(0.5));
+                }
+
+                vec3 color = vec3(step(0.1, geo));
+
+
+                gl_FragColor = vec4(color, 1.0);
+
             }
         `;
