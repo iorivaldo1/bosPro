@@ -389,6 +389,20 @@
         mesh24.rotation.x = -Math.PI / 2;
         mesh24.position.set(36, 0, 8);
         scene.add(mesh24);
+        
+        const material25 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader25,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+
+        const geometry25 = new THREE.PlaneGeometry(10, 10);
+        const mesh25 = new THREE.Mesh(geometry25, material25);
+        mesh25.rotation.x = -Math.PI / 2;
+        mesh25.position.set(-24, 0, 20);
+        scene.add(mesh25);
 
         function animate() {
             requestAnimationFrame(animate);
@@ -402,6 +416,8 @@
             material21.uniforms.u_time.value += 0.01;
             material23.uniforms.u_time.value += 0.01;
             material24.uniforms.u_time.value += 0.01;
+            material25.uniforms.u_time.value += 0.01;
+
 
             renderer.render(scene, camera);
         }

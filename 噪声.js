@@ -1180,7 +1180,7 @@ const fragmentShader24 = `
             float geometrySDFN(vec2 uv, vec2 center,float time){
                 vec2 p = uv - center;
                 float a = atan(p.y, p.x);
-                int N = 3;
+                int N = 4;
                 float r = TWO_PI/float(N);
                 float n = noise(uv*3.0 + time);
                 return cos(floor(0.5 + a/r)*r - a) * length(p) + n * 0.3;
@@ -1226,10 +1226,16 @@ const fragmentShader24 = `
                 else if (grid.x == 1.0 && grid.y == 0.0) {
                     // 右下：中心乱跑
                     vec2 center = vec2(
-                        0.5 + 0.21 * noise(vec2(t, 0.0)),
-                        0.5 + 0.1 * noise(vec2(0.0, t))
+                        0.5 + 0.8 * noise(vec2(t, 0.0)),
+                        0.5 + 0.8 * noise(vec2(0.0, t))
                     );
                     geo = geometrySDF(localUV, center);
+
+                    
+                    float n1 = noise(localUV * 8.0);
+                    float n2 = noise(localUV * 20.0);
+                    float edgeNoise = (n1 * 0.6 + n2 * 0.4 - 0.5)*0.2*(sin(u_time * 0.5) + 1.5);
+                    geo += edgeNoise;
                 }
 
                 else if (grid.x == 0.0 && grid.y == 1.0) {
@@ -1260,7 +1266,78 @@ const fragmentShader24 = `
                     geo = geometrySDF(uv2, vec2(0.5));
                 }
 
-                vec3 color = vec3(step(0.1, geo));
+                vec3 color = vec3(step(0.05, geo));
+
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fragmentShader25 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
+
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            float geometrySDF(vec2 uv, vec2 center,float dis){
+                vec2 p = uv - center;
+                float a = atan(p.y, p.x);
+                int N = 5;
+                float r = TWO_PI/float(N);
+                float uvDis = cos(floor(0.5 + a/r)*r - a) * length(p);
+
+                float n1 = noise(uv * 8.0);
+                float n2 = noise(uv * 20.0);
+
+                float edgeNoise = (n1 * 0.6 + n2 * 0.4 - 0.5)*0.12*(sin(u_time * 0.5) + 1.5);
+                uvDis += edgeNoise;
+
+                return smoothstep(dis, dis + 0.001, uvDis);
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                float t = u_time * 0.2;
+
+                vec2 center = vec2(
+                        0.5 + 0.3 * noise(vec2(t, 0.0)),
+                        0.5 + 0.3 * noise(vec2(0.0, t))
+                    );
+
+                float dis = 0.0001;
+                float geo = geometrySDF(uv, center, dis);
+
+
+                vec3 color = vec3(smoothstep(0.05, 0.1, geo));
 
 
                 gl_FragColor = vec4(color, 1.0);
