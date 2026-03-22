@@ -1226,7 +1226,7 @@ const fragmentShader24 = `
                 else if (grid.x == 1.0 && grid.y == 0.0) {
                     // 右下：中心乱跑
                     vec2 center = vec2(
-                        0.5 + 0.1 * noise(vec2(t, 0.0)),
+                        0.5 + 0.21 * noise(vec2(t, 0.0)),
                         0.5 + 0.1 * noise(vec2(0.0, t))
                     );
                     geo = geometrySDF(localUV, center);
