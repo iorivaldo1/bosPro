@@ -32,7 +32,7 @@
 
 <body>
     <div id="threejs"></div>
-    <script>
+    <script type="module">
         const container = $('#threejs');
         const width = container.width();
         const height = container.height();
@@ -40,13 +40,15 @@
 
         // 调整摄像机位置以容纳两个平面
         const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-        camera.position.set(0, 60, 0);
+        camera.position.set(0, 65, 3);
+        camera.up.set(0, 0, -1);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
         container.append(renderer.domElement);
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 0, 0); // 必须与 camera.lookAt 一致，否则update()会覆盖lookAt
+        // 必须与 camera.lookAt 一致，否则update()会覆盖lookAt
+        controls.target.set(0, 0, 3); 
         controls.update();
 
         const ambientLight = new THREE.AmbientLight(0x404040);
@@ -354,6 +356,9 @@
         const material22 = new THREE.ShaderMaterial({
             vertexShader: vertexShader,
             fragmentShader: fragmentShader22,
+            uniforms: {
+                u_time: { value: 0 },
+            }
         });
 
         const geometry22 = new THREE.PlaneGeometry(10, 10);
@@ -389,7 +394,7 @@
         mesh24.rotation.x = -Math.PI / 2;
         mesh24.position.set(36, 0, 8);
         scene.add(mesh24);
-        
+
         const material25 = new THREE.ShaderMaterial({
             vertexShader: vertexShader,
             fragmentShader: fragmentShader25,
@@ -404,6 +409,84 @@
         mesh25.position.set(-24, 0, 20);
         scene.add(mesh25);
 
+        const material26 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader26,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+        const geometry26 = new THREE.PlaneGeometry(10, 10);
+        const mesh26 = new THREE.Mesh(geometry26, material26);
+        mesh26.rotation.x = -Math.PI / 2;
+        mesh26.position.set(-12, 0, 20);
+        scene.add(mesh26);
+
+        const material27 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader27,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+        const geometry27 = new THREE.PlaneGeometry(10, 10);
+        const mesh27 = new THREE.Mesh(geometry27, material27);
+        mesh27.rotation.x = -Math.PI / 2;
+        mesh27.position.set(0, 0, 20);
+        scene.add(mesh27);
+
+        const material28 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader28,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+        const geometry28 = new THREE.PlaneGeometry(10, 10);
+        const mesh28 = new THREE.Mesh(geometry28, material28);
+        mesh28.rotation.x = -Math.PI / 2;
+        mesh28.position.set(12, 0, 20);
+        scene.add(mesh28);
+
+        const material29 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader29,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+        const geometry29 = new THREE.PlaneGeometry(10, 10);
+        const mesh29 = new THREE.Mesh(geometry29, material29);
+        mesh29.rotation.x = -Math.PI / 2;
+        mesh29.position.set(24, 0, 20);
+        scene.add(mesh29);
+
+        const material30 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader30,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+        const geometry30 = new THREE.PlaneGeometry(10, 10);
+        const mesh30 = new THREE.Mesh(geometry30, material30);
+        mesh30.rotation.x = -Math.PI / 2;
+        mesh30.position.set(36, 0, 20);
+        scene.add(mesh30);
+
+                const material31 = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader31,
+            uniforms: {
+                u_time: { value: 0 },
+            }
+        });
+        const geometry31 = new THREE.PlaneGeometry(10, 10);
+        const mesh31 = new THREE.Mesh(geometry31, material31);
+        mesh31.rotation.x = -Math.PI / 2;
+        mesh31.position.set(-24, 0, 32);
+        scene.add(mesh31);
+
         function animate() {
             requestAnimationFrame(animate);
             material4.uniforms.u_time.value += 0.01;
@@ -414,9 +497,13 @@
             material18.uniforms.u_time.value += 0.01;
             material19.uniforms.u_time.value += 0.01;
             material21.uniforms.u_time.value += 0.01;
+            material22.uniforms.u_time.value += 0.01;
             material23.uniforms.u_time.value += 0.01;
             material24.uniforms.u_time.value += 0.01;
             material25.uniforms.u_time.value += 0.01;
+            material29.uniforms.u_time.value += 0.01;
+            material30.uniforms.u_time.value += 0.01;
+            material31.uniforms.u_time.value += 0.01;
 
 
             renderer.render(scene, camera);

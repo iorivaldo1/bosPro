@@ -65,7 +65,7 @@ const fragmentShader2 = `
             varying vec2 vUv;
             uniform float u_time;
 
-            float random(vec2 p){
+                  float random(vec2 p){
                 return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
             }
 
@@ -824,7 +824,7 @@ const fragmentShader16 = `
                 gl_FragColor = vec4(vec3(1.0 - color), 1.0);
             }
         `;
-        
+
 const fragmentShader17 = `
             #define TWO_PI 6.28318530718
             #define PI 3.14159265359
@@ -1041,6 +1041,7 @@ const fragmentShader22 = `
             #define TWO_PI 6.28318530718
             #define PI 3.14159265359
             varying vec2 vUv;
+            uniform float u_time;
 
             vec2 random (vec2 vUv){
                 vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
@@ -1072,10 +1073,11 @@ const fragmentShader22 = `
 
             void main(){
                 vec2 uv = vUv;
-                
-                uv *= 3.0;
+                float t = u_time * 0.02;
+
                 // uv += vec2(fbm(uv ), fbm(uv ));
-                uv += vec2(fbm(uv  + vec2(1.0, 0.0)), fbm(uv + vec2(0.0, 1.0)));
+                // uv += vec2(fbm(uv  + vec2(1.0, 0.0)), fbm(uv + vec2(0.0, 1.0)));
+                uv += vec2(fbm(uv  + t), fbm(uv - t));
 
                 float n = fbm(uv)*0.5 + 0.5;
                 float smoke = smoothstep(0.2, 0.75, n);
@@ -1344,3 +1346,485 @@ const fragmentShader25 = `
 
             }
         `;
+
+const fragmentShader26 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 skew(vec2 uv){
+                vec2 r = vec2(0.0);
+                r.x = 1.1547*uv.x;
+                r.y = uv.y + 0.5*r.x;
+                return r;
+            }
+
+            vec3 simplexGrid(vec2 uv){
+                vec3 xyz = vec3(0.0);
+                
+                vec2 p = fract(skew(uv));
+
+                if(p.x > p.y){
+                    xyz.xy = 1.0 - vec2(p.x,p.y-p.x);
+                    xyz.z = p.y;
+                } else {
+                    xyz.yz = 1.0 - vec2(p.x-p.y,p.y);
+                    xyz.x = p.x;
+                }
+
+                return fract(xyz);
+            }
+
+            void main(){
+                vec2 uv = vUv *2.0;
+                vec3 color = vec3(0.0);
+
+                color.rg = fract(skew(uv));
+
+                color = simplexGrid(uv);
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+
+`
+
+const fragmentShader27 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 skew(vec2 uv){
+                vec2 r = vec2(0.0);
+                r.x = 1.1547*uv.x;
+                r.y = uv.y + 0.5*r.x;
+                return r;
+            }
+
+            vec3 simplexGrid(vec2 uv){
+                vec3 xyz = vec3(0.0);
+                
+                vec2 p = fract(skew(uv));
+
+                if(p.x > p.y){
+                    xyz.xy = 1.0 - vec2(p.x,p.y-p.x);
+                    xyz.z = p.y;
+                } else {
+                    xyz.yz = 1.0 - vec2(p.x-p.y,p.y);
+                    xyz.x = p.x;
+                }
+
+                return fract(xyz);
+            }
+
+            vec2 hash2(vec2 p){
+                p = fract(p * vec2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return fract(vec2(p.x * p.y, p.x + p.y)) * 2.0 - 1.0;
+            }
+
+            float contrib(vec2 p, vec2 corner){
+                float d = dot(p, p);
+                float w = max(0.5 - d, 0.0);
+                w *= w;
+                w *= w;
+
+                vec2 g = hash2(corner);   // 梯度
+                return w * dot(g, p);
+            }
+
+            float mySnoise(vec2 uv){
+
+                vec2 s = skew(uv);
+                vec2 cell = floor(s);
+                vec2 f = fract(s);
+
+                vec2 i1 = (f.x > f.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+
+                float K = 0.211324865;
+
+                vec2 x0 = f;
+                vec2 x1 = f - i1 + K;
+                vec2 x2 = f - 1.0 + 2.0 * K;
+
+                float n0 = contrib(x0, cell);
+                float n1 = contrib(x1, cell + i1);
+                float n2 = contrib(x2, cell + 1.0);
+
+                return 70.0 * (n0 + n1 + n2);
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                vec3 color = vec3(0.0);
+
+                uv *= 10.0;
+                color = vec3(mySnoise(uv)*0.5 + 0.5);
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+
+`
+
+const fragmentShader28 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187,
+                    // (3.0-sqrt(3.0))/6.0
+                    0.366025403784439,
+                    // 0.5*(sqrt(3.0)-1.0)
+                    -0.577350269189626,
+                    // -1.0 + 2.0 * C.x
+                    0.024390243902439);
+                    // 1.0 / 41.0
+
+                vec2 i  = floor(v + dot(v, C.yy));
+                vec2 x0 = v - i + dot(i, C.xx);
+
+                // Other two corners (x1, x2)
+                vec2 i1 = vec2(0.0);
+                i1 = (x0.x > x0.y)? vec2(1.0, 0.0):vec2(0.0, 1.0);
+                vec2 x1 = x0.xy + C.xx - i1;
+                vec2 x2 = x0.xy + C.zz;
+
+                i = mod289(i);
+                vec3 p = permute(
+                        permute( i.y + vec3(0.0, i1.y, 1.0))
+                            + i.x + vec3(0.0, i1.x, 1.0 ));
+
+                vec3 m = max(0.5 - vec3(
+                                    dot(x0,x0),
+                                    dot(x1,x1),
+                                    dot(x2,x2)
+                                    ), 0.0);
+
+                m = m*m ;
+                m = m*m ;
+
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+
+                m *= 1.79284291400159 - 0.85373472095314 * (a0*a0+h*h);
+
+                vec3 g = vec3(0.0);
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * vec2(x1.x,x2.x) + h.yz * vec2(x1.y,x2.y);
+                return 130.0 * dot(m, g);
+                }
+
+            void main(){
+                vec2 uv = vUv;
+                vec3 color = vec3(0.0);
+
+                uv *= 10.0;
+                color = vec3(snoise(uv)*0.5 + 0.5);
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+
+`
+
+
+const fragmentShader29 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187,
+                    // (3.0-sqrt(3.0))/6.0
+                    0.366025403784439,
+                    // 0.5*(sqrt(3.0)-1.0)
+                    -0.577350269189626,
+                    // -1.0 + 2.0 * C.x
+                    0.024390243902439);
+                    // 1.0 / 41.0
+
+                vec2 i  = floor(v + dot(v, C.yy));
+                vec2 x0 = v - i + dot(i, C.xx);
+
+                // Other two corners (x1, x2)
+                vec2 i1 = vec2(0.0);
+                i1 = (x0.x > x0.y)? vec2(1.0, 0.0):vec2(0.0, 1.0);
+                vec2 x1 = x0.xy + C.xx - i1;
+                vec2 x2 = x0.xy + C.zz;
+
+                i = mod289(i);
+                vec3 p = permute(
+                        permute( i.y + vec3(0.0, i1.y, 1.0))
+                            + i.x + vec3(0.0, i1.x, 1.0 ));
+
+                vec3 m = max(0.5 - vec3(
+                                    dot(x0,x0),
+                                    dot(x1,x1),
+                                    dot(x2,x2)
+                                    ), 0.0);
+
+                m = m*m ;
+                m = m*m ;
+
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+
+                m *= 1.79284291400159 - 0.85373472095314 * (a0*a0+h*h);
+
+                vec3 g = vec3(0.0);
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * vec2(x1.x,x2.x) + h.yz * vec2(x1.y,x2.y);
+                return 130.0 * dot(m, g);
+        }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * snoise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                float t = u_time * 0.02;
+                uv += vec2(fbm(uv + t), fbm(uv - t));
+                            
+                float n = fbm(uv)*0.5 + 0.5;
+                
+                float cracks = smoothstep(0.4, 0.7, n);
+                vec3 color = mix(
+                    vec3(0.05, 0.0, 0.0),
+                    vec3(1.0, 0.3, 0.0),
+                    cracks
+                );
+                color += pow(cracks, 3.0) * vec3(0.2, 0.8, 0.2);
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+
+`
+const fragmentShader30 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187,
+                    // (3.0-sqrt(3.0))/6.0
+                    0.366025403784439,
+                    // 0.5*(sqrt(3.0)-1.0)
+                    -0.577350269189626,
+                    // -1.0 + 2.0 * C.x
+                    0.024390243902439);
+                    // 1.0 / 41.0
+
+                vec2 i  = floor(v + dot(v, C.yy));
+                vec2 x0 = v - i + dot(i, C.xx);
+
+                // Other two corners (x1, x2)
+                vec2 i1 = vec2(0.0);
+                i1 = (x0.x > x0.y)? vec2(1.0, 0.0):vec2(0.0, 1.0);
+                vec2 x1 = x0.xy + C.xx - i1;
+                vec2 x2 = x0.xy + C.zz;
+
+                i = mod289(i);
+                vec3 p = permute(
+                        permute( i.y + vec3(0.0, i1.y, 1.0))
+                            + i.x + vec3(0.0, i1.x, 1.0 ));
+
+                vec3 m = max(0.5 - vec3(
+                                    dot(x0,x0),
+                                    dot(x1,x1),
+                                    dot(x2,x2)
+                                    ), 0.0);
+
+                m = m*m ;
+                m = m*m ;
+
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+
+                m *= 1.79284291400159 - 0.85373472095314 * (a0*a0+h*h);
+
+                vec3 g = vec3(0.0);
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * vec2(x1.x,x2.x) + h.yz * vec2(x1.y,x2.y);
+                return 130.0 * dot(m, g);
+            }
+
+            vec2 curlNoise(vec2 p) {
+                float e = 0.001;
+
+                float n1 = snoise(p + vec2(0.0, e));
+                float n2 = snoise(p - vec2(0.0, e));
+                float n3 = snoise(p + vec2(e, 0.0));
+                float n4 = snoise(p - vec2(e, 0.0));
+
+                float dx = (n1 - n2) / (2.0 * e);
+                float dy = (n3 - n4) / (2.0 * e);
+
+                return vec2(dy, -dx); // 关键：旋转90°
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * snoise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                float t = u_time * 0.02;
+                vec2 flow = vec2(0.0);
+
+                flow += curlNoise(uv * 1.0 + t) * 0.5;
+                flow += curlNoise(uv * 2.0 - t) * 0.25;
+                flow += curlNoise(uv * 4.0 + t) * 0.125;
+                uv += flow * 0.3;
+                float n = fbm(uv)*0.5 + 0.5;
+                
+                float cracks = smoothstep(0.3, 0.7, n);
+                vec3 color = mix(
+                    vec3(0.05, 0.0, 0.0),
+                    vec3(1.0, 0.3, 0.0),
+                    cracks
+                );
+                color += pow(cracks, 3.0) * vec3(0.2, 0.8, 0.2);
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+
+`
+
+const fragmentShader31 = `
+            #define TWO_PI 6.28318530718
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187,
+                    // (3.0-sqrt(3.0))/6.0
+                    0.366025403784439,
+                    // 0.5*(sqrt(3.0)-1.0)
+                    -0.577350269189626,
+                    // -1.0 + 2.0 * C.x
+                    0.024390243902439);
+                    // 1.0 / 41.0
+
+                vec2 i  = floor(v + dot(v, C.yy));
+                vec2 x0 = v - i + dot(i, C.xx);
+
+                // Other two corners (x1, x2)
+                vec2 i1 = vec2(0.0);
+                i1 = (x0.x > x0.y)? vec2(1.0, 0.0):vec2(0.0, 1.0);
+                vec2 x1 = x0.xy + C.xx - i1;
+                vec2 x2 = x0.xy + C.zz;
+
+                i = mod289(i);
+                vec3 p = permute(
+                        permute( i.y + vec3(0.0, i1.y, 1.0))
+                            + i.x + vec3(0.0, i1.x, 1.0 ));
+
+                vec3 m = max(0.5 - vec3(
+                                    dot(x0,x0),
+                                    dot(x1,x1),
+                                    dot(x2,x2)
+                                    ), 0.0);
+
+                m = m*m ;
+                m = m*m ;
+
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+
+                m *= 1.79284291400159 - 0.85373472095314 * (a0*a0+h*h);
+
+                vec3 g = vec3(0.0);
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * vec2(x1.x,x2.x) + h.yz * vec2(x1.y,x2.y);
+                return 130.0 * dot(m, g);
+            }
+
+            vec2 curlNoise(vec2 p) {
+                float e = 0.001;
+
+                float n1 = snoise(p + vec2(0.0, e));
+                float n2 = snoise(p - vec2(0.0, e));
+                float n3 = snoise(p + vec2(e, 0.0));
+                float n4 = snoise(p - vec2(e, 0.0));
+
+                float dx = (n1 - n2) / (2.0 * e);
+                float dy = (n3 - n4) / (2.0 * e);
+
+                return vec2(dy, -dx); // 关键：旋转90°
+            }
+
+            float fbm(vec2 uv) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * snoise(uv);
+                    uv *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                float t = u_time * 0.02;
+
+                uv += vec2(fbm(uv  + t), fbm(uv - t));
+                
+                float n = fbm(uv)*0.5 + 0.5;
+                float smoke = smoothstep(0.2, 0.75, n);
+                vec3 color = vec3(smoke);
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+
+`
