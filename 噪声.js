@@ -1787,18 +1787,21 @@ const fragmentShader31 = `
                 return 130.0 * dot(m, g);
             }
 
-            vec2 curlNoise(vec2 p) {
-                float e = 0.001;
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return -1.0 + 2.0*fract(sin(vUv)*43758.5453123);
+            }
 
-                float n1 = snoise(p + vec2(0.0, e));
-                float n2 = snoise(p - vec2(0.0, e));
-                float n3 = snoise(p + vec2(e, 0.0));
-                float n4 = snoise(p - vec2(e, 0.0));
 
-                float dx = (n1 - n2) / (2.0 * e);
-                float dy = (n3 - n4) / (2.0 * e);
-
-                return vec2(dy, -dx); // 关键：旋转90°
+            float noise(vec2 vUv){
+                vec2 ipos = floor(vUv);
+                vec2 fpos = fract(vUv);
+                
+                vec2 u = fpos*fpos*(3.0-2.0*fpos);
+                return mix(mix(dot(random(ipos + vec2(0.0, 0.0)), fpos - vec2(0.0, 0.0)),
+                               dot(random(ipos + vec2(1.0, 0.0)), fpos - vec2(1.0, 0.0)), u.x),
+                           mix(dot(random(ipos + vec2(0.0, 1.0)), fpos - vec2(0.0, 1.0)),
+                               dot(random(ipos + vec2(1.0, 1.0)), fpos - vec2(1.0, 1.0)), u.x), u.y);
             }
 
             float fbm(vec2 uv) {
@@ -1806,7 +1809,9 @@ const fragmentShader31 = `
                 float amplitude = 0.5;
                 
                 for (int i = 0; i < 5; i++) {
+                    // value += amplitude * snoise(uv);
                     value += amplitude * snoise(uv);
+
                     uv *= 2.0;
                     amplitude *= 0.5;
                 }
@@ -1815,12 +1820,13 @@ const fragmentShader31 = `
 
             void main(){
                 vec2 uv = vUv ;
-                float t = u_time * 0.02;
 
+                
+                float t = u_time * 0.02;
                 uv += vec2(fbm(uv  + t), fbm(uv - t));
                 
                 float n = fbm(uv)*0.5 + 0.5;
-                float smoke = smoothstep(0.2, 0.75, n);
+                float smoke = smoothstep(0.1, 0.8, n);
                 vec3 color = vec3(smoke);
 
                 gl_FragColor = vec4(color, 1.0);
