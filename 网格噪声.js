@@ -272,6 +272,8 @@ const fragmentShader6 = `
             }
         `;
 
+
+
 const fragmentShader7 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
@@ -312,6 +314,8 @@ const fragmentShader7 = `
 
             }
         `;
+
+
 
 const fragmentShader8 = `
             varying vec2 vUv;
@@ -362,8 +366,71 @@ const fragmentShader8 = `
             }
         `;
 
+
 const fragmentShader9 = `
+    varying vec2 vUv;
+    uniform vec2 u_mouse;
+
+    vec2 random (vec2 vUv){
+        vUv = vec2(
+            dot(vUv,vec2(127.1,311.7)),
+            dot(vUv,vec2(269.5,183.3))
+        );
+        return fract(sin(vUv)*43758.5453123);
+    }
+
+    void main(){
+        vec2 uv = vUv;
+        vec3 color = vec3(0.0);
+
+        // 放大 cell
+        uv *= 10.0;
+
+        vec2 ipos = floor(uv);
+        vec2 fpos = fract(uv);
+
+        float minDist = 1.0;
+
+        // 🔥 9宫格搜索
+        for(int x = -1; x <= 1; x++){
+            for(int y = -1; y <= 1; y++){
+                vec2 neighbor = vec2(float(x), float(y));
+
+                vec2 point = random(ipos + neighbor);
+
+                vec2 diff = neighbor + point - fpos;
+                float dist = length(diff);
+
+                minDist = min(minDist, dist);
+            }
+        }
+
+        // color += minDist;
+        // color = vec3(color);
+
+        // 🔥 圆环映射（核心）
+        // float t = 3.0 * exp(-4.0 * abs(2.5 * minDist - 1.1));
+
+        float radius = 0.4;
+        float width  = 4.0;
+        float t = exp(-width * abs(minDist - radius));
+
+        color = vec3(t);
+
+        // t *= sqrt(3.0 * exp(-4.0 * abs(2.5 * minDist*2.0 - 1.0)));
+        // t *= exp(-dot(vUv - 0.5, vUv - 0.5) * 3.0);
+
+        // 🔥 蓝色发光
+        // color = vec3(0.1, 1.1*t, pow(t, 0.5 - t));
+        
+
+        gl_FragColor = vec4(color, 1.0);
+    }
+`;
+
+const fragmentShader10 = `
             varying vec2 vUv;
+            uniform vec2 u_mouse;
             uniform float u_time;
 
             vec2 random (vec2 vUv){
@@ -374,34 +441,78 @@ const fragmentShader9 = `
             void main(){
                 vec2 uv = vUv ;
                 vec3 color = vec3(0.0);
-                vec2 point[4];
-                point[0] = vec2(0.83,0.75);
-                point[1] = vec2(0.60,0.07);
-                point[2] = vec2(0.28,0.64);
-                point[3] =  vec2(0.31,0.26);
-                
-                // 为每个点生成变径圆环线
-                for (int i = 0; i < 4; i++) {
-                    float dist = distance(uv, point[i]);
-                    
-                    // 每个圆环的基础半径不同
-                    float baseRadius = 0.1 + float(i) * 0.05; // 基础半径：0.1, 0.15, 0.2, 0.25
-                    float timeOffset = float(i) * 1.5; // 每个圆环的时间偏移
-                    
-                    // 变径：半径随时间振荡
-                    float radius = baseRadius + sin(u_time * 2.0 + timeOffset) * 0.03;
-                    
-                    // 线条粗细
-                    float lineWidth = 0.005;
-                    
-                    // 创建圆环线：只在距离等于半径时显示
-                    float line = 1.0 - smoothstep(0.0, lineWidth, abs(dist - radius));
-                    
-                    // 添加到颜色中
-                    color += line;
+                uv *= 5.0;
+                vec2 ipos = floor(uv);
+                vec2 fpos = fract(uv);
+
+                float m_dist = 1.0;
+
+                for(int j = -1; j <= 1; j++) {
+                    for(int i = -1; i <= 1; i++) {
+                        vec2 neighbor = vec2(float(i), float(j));
+
+                        vec2 point = random(ipos + neighbor );
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point) ;
+                        vec2 diff = neighbor + point - fpos;
+                        float dist = length(diff);
+
+                        m_dist = min(m_dist, dist);
+                    }
                 }
-                
+
+                // color += m_dist;
+                // color += 1.0 - step(0.02, m_dist);
+
+                float radius = 0.4;
+                float width  = 10.0;
+                float t = exp(-width * abs(m_dist - radius));
+                color = vec3(t);
+
                 gl_FragColor = vec4(color, 1.0);
 
             }
         `;
+
+
+const fragmentShader11 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                vec2 ipos = floor(uv);
+                vec2 fpos = fract(uv);
+
+                float m_dist = 1.0;
+
+                for(int j = -1; j <= 1; j++) {
+                    for(int i = -1; i <= 1; i++) {
+                        vec2 neighbor = vec2(float(i), float(j));
+
+                        vec2 point = random(ipos + neighbor );
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point) ;
+                        vec2 diff = neighbor + point - fpos;
+                        float dist = length(diff);
+
+                        m_dist = min(m_dist, dist);
+                    }
+                }
+
+                color += m_dist;
+
+
+                color += 1.0 - step(0.02, m_dist);
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+        
