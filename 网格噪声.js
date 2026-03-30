@@ -492,6 +492,7 @@ const fragmentShader11 = `
                 vec2 fpos = fract(uv);
 
                 float m_dist = 1.0;
+                vec2 m_point;
 
                 for(int j = -1; j <= 1; j++) {
                     for(int i = -1; i <= 1; i++) {
@@ -502,14 +503,22 @@ const fragmentShader11 = `
                         vec2 diff = neighbor + point - fpos;
                         float dist = length(diff);
 
-                        m_dist = min(m_dist, dist);
+                        if( dist < m_dist ) {
+                            m_dist = dist;
+                            m_point = point;
+                        }
                     }
                 }
 
-                color += m_dist;
+                // color = vec3(m_dist);
 
+                // color = vec3(dot(m_point,vec2(.3,.6)));
 
-                color += 1.0 - step(0.02, m_dist);
+                float radius = 0.4;
+                float width  = 10.0;
+                float t = exp(-width * abs(m_dist - radius));
+                color = vec3(t);
+
                 gl_FragColor = vec4(color, 1.0);
 
             }
