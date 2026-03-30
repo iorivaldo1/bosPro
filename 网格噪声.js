@@ -231,7 +231,7 @@ const fragmentShader6 = `
             void main(){
                 vec2 uv = vUv ;
                 vec3 color = vec3(0.0);
-                uv *= 3.0;
+                uv *= 4.0;
                 vec2 ipos = floor(uv);
                 vec2 fpos = fract(uv);
 
@@ -241,8 +241,8 @@ const fragmentShader6 = `
                     for(int i = -1; i <= 1; i++) {
                         vec2 neighbor = vec2(float(i), float(j));
 
-                        vec2 point = random(ipos + neighbor);
-                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 point = random(ipos + neighbor );
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point) ;
                         vec2 diff = neighbor + point - fpos;
                         float dist = length(diff);
 
@@ -250,16 +250,157 @@ const fragmentShader6 = `
                     }
                 }
 
-                vec2 point = random(ipos);
-                vec2 diff = point - fpos;
-                float dist = length(diff);
+                // color += m_dist;
+                // color += 1.0 - step(0.02, m_dist);
+                // color.r += step(.98, fpos.x) + step(.98, fpos.y);
+
+                
+                vec2 mousePoint = u_mouse * 4.0; // 缩放到相同的网格空间
+                vec2 mouseDiff = mousePoint - uv;
+                float mouseDist = length(mouseDiff);
+                m_dist = min(m_dist, mouseDist);
+
+                color += m_dist;
+                color += 1.0 - step(0.02, m_dist);
+                // color.r += step(.98, fpos.x) + step(.98, fpos.y);
+                
+                float mousePointHighlight = 1.0 - smoothstep(0.0, 0.1, mouseDist);
+                color += mousePointHighlight * 0.8;
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fragmentShader7 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                vec2 ipos = floor(uv);
+                vec2 fpos = fract(uv);
+
+                float m_dist = 1.0;
+
+                for(int j = -1; j <= 1; j++) {
+                    for(int i = -1; i <= 1; i++) {
+                        vec2 neighbor = vec2(float(i), float(j));
+
+                        vec2 point = random(ipos + neighbor );
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point) ;
+                        vec2 diff = neighbor + point - fpos;
+                        float dist = length(diff);
+
+                        m_dist = min(m_dist, dist);
+                    }
+                }
 
                 color += m_dist;
 
+
                 color += 1.0 - step(0.02, m_dist);
+                gl_FragColor = vec4(color, 1.0);
 
-                color.r += step(.98, fpos.x) + step(.98, fpos.y);
+            }
+        `;
 
+const fragmentShader8 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float worley(vec2 uv, float time) {
+                vec2 ipos = floor(uv);
+                vec2 fpos = fract(uv);
+
+                float F1 = 1.0; // 最近距离
+                float F2 = 1.0; // 第二近距离
+                for (int j = -1; j <= 1; j++) {
+                    for (int i = -1; i <= 1; i++) {
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(ipos + neighbor);
+                        point = 0.5 + 0.5 * sin(time + 6.2831 * point);
+                        vec2 diff = neighbor + point - fpos;
+                        float dist = length(diff);
+
+                        if (dist < F1) {
+                            F2 = F1;
+                            F1 = dist;
+                        } else if (dist < F2) {
+                            F2 = dist;
+                        }
+                    }
+                }
+
+                float cell = F1;           // 基础细胞
+                float edge = F2 - F1;      // 边界
+                float crack = smoothstep(0.0, 0.05, F2 - F1); // 裂缝
+
+                return cell;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                color += worley(uv * 10.0, u_time * 0.5);
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fragmentShader9 = `
+            varying vec2 vUv;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                vec2 point[4];
+                point[0] = vec2(0.83,0.75);
+                point[1] = vec2(0.60,0.07);
+                point[2] = vec2(0.28,0.64);
+                point[3] =  vec2(0.31,0.26);
+                
+                // 为每个点生成变径圆环线
+                for (int i = 0; i < 4; i++) {
+                    float dist = distance(uv, point[i]);
+                    
+                    // 每个圆环的基础半径不同
+                    float baseRadius = 0.1 + float(i) * 0.05; // 基础半径：0.1, 0.15, 0.2, 0.25
+                    float timeOffset = float(i) * 1.5; // 每个圆环的时间偏移
+                    
+                    // 变径：半径随时间振荡
+                    float radius = baseRadius + sin(u_time * 2.0 + timeOffset) * 0.03;
+                    
+                    // 线条粗细
+                    float lineWidth = 0.005;
+                    
+                    // 创建圆环线：只在距离等于半径时显示
+                    float line = 1.0 - smoothstep(0.0, lineWidth, abs(dist - radius));
+                    
+                    // 添加到颜色中
+                    color += line;
+                }
+                
                 gl_FragColor = vec4(color, 1.0);
 
             }
