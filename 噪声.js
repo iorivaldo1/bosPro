@@ -65,7 +65,7 @@ const fragmentShader2 = `
             varying vec2 vUv;
             uniform float u_time;
 
-                  float random(vec2 p){
+            float random(vec2 p){
                 return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);
             }
 
