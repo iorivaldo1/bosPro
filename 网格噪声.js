@@ -610,7 +610,50 @@ const fs13 = `
             }
         `;
 
-const fs14 = `
+
+
+const fs16 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        // point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        minDist = min(minDist, dist);
+                    }
+                }
+                return minDist;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+
+                uv *= 3.0;
+                color = vec3(voronoi(uv));
+                // color += step(0.060, voronoi(uv)); 
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs17 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
             uniform float u_time;
@@ -644,7 +687,109 @@ const fs14 = `
                 vec3 color = vec3(0.0);
 
                 uv *= 3.0;
+                color = vec3(voronoi(uv));
+                // color += step(0.060, voronoi(uv)); 
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs18 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        // point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        minDist = min(minDist, minDist*dist);
+                    }
+                }
+                return minDist;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+
+                uv *= 3.0;
+                // color = vec3(voronoi(uv));
                 color += step(0.060, voronoi(uv)); 
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs19 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                vec2 point[4];
+                point[0] = vec2(0.83,0.75);
+                point[1] = vec2(0.60,0.37);
+                point[2] = vec2(0.28,0.64);
+                point[3] =  vec2(0.31,0.26);
+                float m_dist = 1.0;
+
+                for (int i = 0; i < 4; i++) {
+                    float dist = distance(uv, point[i]);
+                    m_dist = min(m_dist, dist);
+                }
+                color += m_dist;
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs20 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                vec2 point[4];
+                point[0] = vec2(0.83,0.75);
+                point[1] = vec2(0.60,0.37);
+                point[2] = vec2(0.28,0.64);
+                point[3] =  vec2(0.31,0.26);
+                float m_dist = 1.0;
+
+                for (int i = 0; i < 4; i++) {
+                    float dist = distance(uv, point[i]);
+                    m_dist = min(m_dist, m_dist*dist);
+                }
+                color += m_dist;
                 gl_FragColor = vec4(color, 1.0);
 
             }

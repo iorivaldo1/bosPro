@@ -242,19 +242,77 @@
     mesh13.position.set(0, 0, -4);
     scene.add(mesh13);
 
-    const material14 = new THREE.ShaderMaterial({
+    const material16 = new THREE.ShaderMaterial({
       vertexShader: vertexShader,
-      fragmentShader: fs14,
+      fragmentShader: fs16,
       uniforms: {
         u_time: { value: 0 },
         u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
       },
     });
-    const geometry14 = new THREE.PlaneGeometry(10, 10);
-    const mesh14 = new THREE.Mesh(geometry14, material14);
-    mesh14.rotation.x = -Math.PI / 2;
-    mesh14.position.set(12, 0, -4);
-    scene.add(mesh14);
+    const geometry16 = new THREE.PlaneGeometry(10, 10);
+    const mesh16 = new THREE.Mesh(geometry16, material16);
+    mesh16.rotation.x = -Math.PI / 2;
+    mesh16.position.set(-24, 0, 8);
+    scene.add(mesh16);
+
+    const material17 = new THREE.ShaderMaterial({
+      vertexShader: vertexShader,
+      fragmentShader: fs17,
+      uniforms: {
+        u_time: { value: 0 },
+        u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      },
+    });
+    const geometry17 = new THREE.PlaneGeometry(10, 10);
+    const mesh17 = new THREE.Mesh(geometry17, material17);
+    mesh17.rotation.x = -Math.PI / 2;
+    mesh17.position.set(-12, 0, 8);
+    scene.add(mesh17);
+
+    const material18 = new THREE.ShaderMaterial({
+      vertexShader: vertexShader,
+      fragmentShader: fs18,
+      uniforms: {
+        u_time: { value: 0 },
+        u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      },
+    });
+    const geometry18 = new THREE.PlaneGeometry(10, 10);
+    const mesh18 = new THREE.Mesh(geometry18, material18);
+    mesh18.rotation.x = -Math.PI / 2;
+    mesh18.position.set(0, 0, 8);
+    scene.add(mesh18);
+
+    const material19 = new THREE.ShaderMaterial({
+      vertexShader: vertexShader,
+      fragmentShader: fs19,
+      uniforms: {
+        u_time: { value: 0 },
+        u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      },
+    });
+    const geometry19 = new THREE.PlaneGeometry(10, 10);
+    const mesh19 = new THREE.Mesh(geometry19, material19);
+    mesh19.rotation.x = -Math.PI / 2;
+    mesh19.position.set(12, 0, 8);
+    scene.add(mesh19);
+
+    const material20 = new THREE.ShaderMaterial({
+      vertexShader: vertexShader,
+      fragmentShader: fs20,
+      uniforms: {
+        u_time: { value: 0 },
+        u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      },
+    });
+    const geometry20 = new THREE.PlaneGeometry(10, 10);
+    const mesh20 = new THREE.Mesh(geometry20, material20);
+    mesh20.rotation.x = -Math.PI / 2;
+    mesh20.position.set(24, 0, 8);
+    scene.add(mesh20);
+
+
     function animate() {
       requestAnimationFrame(animate);
       material1.uniforms.u_time.value += 0.01;
@@ -264,7 +322,6 @@
       material8.uniforms.u_time.value += 0.01;
       material10.uniforms.u_time.value += 0.01;
       material11.uniforms.u_time.value += 0.01;
-      material14.uniforms.u_time.value += 0.01;
 
       renderer.render(scene, camera);
     }
