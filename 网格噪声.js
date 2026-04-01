@@ -268,8 +268,6 @@ const fs6 = `
             }
         `;
 
-
-
 const fs7 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
@@ -311,8 +309,6 @@ const fs7 = `
             }
         `;
 
-
-
 const fs8 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
@@ -350,7 +346,7 @@ const fs8 = `
                 float edge = F2 - F1;      // 边界
                 float crack = smoothstep(0.0, 0.05, F2 - F1); // 裂缝
 
-                return cell;
+                return edge;
             }
 
             void main(){
@@ -361,7 +357,6 @@ const fs8 = `
 
             }
         `;
-
 
 const fs9 = `
     varying vec2 vUv;
@@ -456,9 +451,6 @@ const fs10 = `
                     }
                 }
 
-                // color += m_dist;
-                // color += 1.0 - step(0.02, m_dist);
-
                 float radius = 0.4;
                 float width  = 10.0;
                 float t = exp(-width * abs(m_dist - radius));
@@ -468,7 +460,6 @@ const fs10 = `
 
             }
         `;
-
 
 const fs11 = `
             varying vec2 vUv;
@@ -520,7 +511,6 @@ const fs11 = `
             }
         `;
 
-
 const fs12 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
@@ -563,7 +553,6 @@ const fs12 = `
 
             }
         `;
-
 
 const fs13 = `
             varying vec2 vUv;
@@ -610,7 +599,78 @@ const fs13 = `
             }
         `;
 
+const fs14 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
 
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                vec2 point[4];
+                point[0] = vec2(0.83,0.75);
+                point[1] = vec2(0.60,0.37);
+                point[2] = vec2(0.28,0.64);
+                point[3] =  vec2(0.31,0.26);
+                float m_dist = 0.0;
+
+                for (int i = 0; i < 4; i++) {
+                    float dist = distance(uv, point[i]);
+                    m_dist += 0.03/(dist*dist);
+                }
+                color += step(1.0, m_dist);
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs15 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 0.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        // minDist = min(minDist, dist);
+                        minDist += 0.04/(dist*dist);
+                    }
+                }
+                return minDist;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+
+                uv *= 3.0;
+                // color = vec3(voronoi(uv));
+                // color += step(0.060, voronoi(uv));
+                color += step(voronoi(uv),1.0); 
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
 
 const fs16 = `
             varying vec2 vUv;
@@ -713,7 +773,90 @@ const fs18 = `
                     for(int i=-1;i<=1;i++){
                         vec2 neighbor = vec2(float(i), float(j));
                         vec2 point = random(neighbor + p);
-                        // point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        minDist = min(minDist, minDist*dist);
+                    }
+                }
+                return minDist;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+
+                uv *= 3.0;
+                color = vec3(voronoi(uv));
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs19 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        minDist = min(minDist, minDist*dist);
+                    }
+                }
+                return minDist;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+
+                uv *= 3.0;
+                color += smoothstep(0.06, 0.061, voronoi(uv));
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs20 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                float t = u_time * 0.2;
+
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+    
                         vec2 diff = neighbor + point - f;
                         float dist = length(diff);
 
@@ -735,7 +878,7 @@ const fs18 = `
             }
         `;
 
-const fs19 = `
+const fs21 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
             uniform float u_time;
@@ -765,7 +908,7 @@ const fs19 = `
             }
         `;
 
-const fs20 = `
+const fs22 = `
             varying vec2 vUv;
             uniform vec2 u_mouse;
             uniform float u_time;
@@ -794,3 +937,521 @@ const fs20 = `
 
             }
         `;
+
+const fs23 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                // 第一遍：找到最近的种子点
+                vec2 closestPoint;
+                vec2 closestCell;
+                float minDist = 10.0;
+                
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point) ;
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestPoint = point;
+                            closestCell = neighbor;
+                        }
+                    }
+                }
+
+                // 第二遍：计算到最近边界的真实距离
+                float edgeDist = 10.0;
+                
+                for(int j=-2;j<=2;j++){
+                    for(int i=-2;i<=2;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point) ;
+                        
+                        // 跳过最近的种子点本身
+                        vec2 cellDiff = neighbor - closestCell;
+                        if(dot(cellDiff, cellDiff) < 0.1) continue;
+                        
+                        // 计算当前点到两个种子点连线的垂直平分线的距离
+                        vec2 closestPos = closestCell + closestPoint - f;
+                        vec2 otherPos = neighbor + point - f;
+                        
+                        // 中点
+                        vec2 midPoint = (closestPos + otherPos) * 0.5;
+                        // 边界方向（两点连线的方向）
+                        vec2 edgeDir = normalize(otherPos - closestPos);
+                        
+                        // 当前点到边界的距离
+                        float dist = abs(dot(midPoint, edgeDir));
+                        
+                        edgeDist = min(edgeDist, dist);
+                    }
+                }
+                
+                return edgeDist;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 3.0;
+                
+                float edge = voronoi(uv);
+                // 固定边界宽度：0.05
+                color += step(0.01, edge);
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs24 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+            
+            // 根据种子点位置生成颜色
+            vec3 randomColor(vec2 seed){
+                return vec3(
+                    fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(39.346, 11.135))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(73.156, 52.235))) * 43758.5453)
+                );
+            }
+
+            // 返回 vec3: (edgeDist, cellId.x, cellId.y)
+            vec3 voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                // 第一遍：找到最近的种子点
+                vec2 closestPoint;
+                vec2 closestCell;
+                float minDist = 10.0;
+                
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestPoint = point;
+                            closestCell = neighbor;
+                        }
+                    }
+                }
+
+                // 第二遍：计算到最近边界的真实距离
+                float edgeDist = 10.0;
+                
+                for(int j=-2;j<=2;j++){
+                    for(int i=-2;i<=2;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        
+                        // 跳过最近的种子点本身
+                        vec2 cellDiff = neighbor - closestCell;
+                        if(dot(cellDiff, cellDiff) < 0.1) continue;
+                        
+                        // 计算当前点到两个种子点连线的垂直平分线的距离
+                        vec2 closestPos = closestCell + closestPoint - f;
+                        vec2 otherPos = neighbor + point - f;
+                        
+                        // 中点
+                        vec2 midPoint = (closestPos + otherPos) * 0.5;
+                        // 边界方向（两点连线的方向）
+                        vec2 edgeDir = normalize(otherPos - closestPos);
+                        
+                        // 当前点到边界的距离
+                        float dist = abs(dot(midPoint, edgeDir));
+                        
+                        edgeDist = min(edgeDist, dist);
+                    }
+                }
+                
+                // 返回边界距离和细胞ID（种子点所在的格子坐标）
+                vec2 cellId = p + closestCell;
+                return vec3(edgeDist, cellId);
+            }
+
+            void main(){
+                vec2 uv = vUv;
+
+                uv *= 3.0;
+                
+                vec3 v = voronoi(uv);
+                float edgeDist = v.x;
+                vec2 cellId = v.yz;
+                
+                // 根据细胞ID生成颜色
+                vec3 cellColor = randomColor(cellId);
+                
+                // 边界为黑色，内部为细胞颜色
+                float edge = step(0.03, edgeDist);
+                vec3 color = cellColor * edge;
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs25 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+            
+            // 根据种子点位置生成颜色
+            vec3 randomColor(vec2 seed){
+                return vec3(
+                    fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(39.346, 11.135))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(73.156, 52.235))) * 43758.5453)
+                );
+            }
+
+            // 返回 vec3: (edgeDist, cellId.x, cellId.y)
+            vec3 voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                // 第一遍：找到最近的种子点
+                vec2 closestPoint;
+                vec2 closestCell;
+                float minDist = 10.0;
+                
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestPoint = point;
+                            closestCell = neighbor;
+                        }
+                    }
+                }
+
+                // 第二遍：计算到最近边界的真实距离
+                float edgeDist = 10.0;
+                
+                for(int j=-2;j<=2;j++){
+                    for(int i=-2;i<=2;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        
+                        // 跳过最近的种子点本身
+                        vec2 cellDiff = neighbor - closestCell;
+                        if(dot(cellDiff, cellDiff) < 0.1) continue;
+                        
+                        // 计算当前点到两个种子点连线的垂直平分线的距离
+                        vec2 closestPos = closestCell + closestPoint - f;
+                        vec2 otherPos = neighbor + point - f;
+                        
+                        // 中点
+                        vec2 midPoint = (closestPos + otherPos) * 0.5;
+                        // 边界方向（两点连线的方向）
+                        vec2 edgeDir = normalize(otherPos - closestPos);
+                        
+                        // 当前点到边界的距离
+                        float dist = abs(dot(midPoint, edgeDir));
+                        
+                        edgeDist = min(edgeDist, dist);
+                    }
+                }
+                
+                // 返回边界距离和细胞ID（种子点所在的格子坐标）
+                vec2 cellId = p + closestCell;
+                return vec3(edgeDist, cellId);
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                uv *= 3.0;
+                
+                vec3 v = voronoi(uv);
+                float edgeDist = v.x;
+                vec2 cellId = v.yz;
+                
+                // 根据细胞ID生成颜色
+                vec3 cellColor = randomColor(cellId);
+                
+                // 边界为白色，内部为细胞颜色
+                float edgeMask = step(0.03, edgeDist);  // 边界内=0，边界外=1
+                vec3 edgeColor = vec3(1.0);             // 白色边界
+                vec3 color = mix(edgeColor, cellColor, edgeMask);
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs26 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            vec3 randomColor(vec2 seed){
+                return vec3(
+                    fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(39.346, 11.135))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(73.156, 52.235))) * 43758.5453)
+                );
+            }
+
+            vec3 voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                vec2 closestCell;
+                float minDist = 1.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestCell = neighbor;
+                        }
+                    }
+                }
+                vec2 cellId = p +closestCell;
+
+                return vec3(minDist, cellId);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                vec3 voronoiResult = voronoi(uv);
+                float m_dist = voronoiResult.x;
+                vec2 cellId = voronoiResult.yz  ;
+                
+                // color += vec3(m_dist);
+                // color += step(0.3, m_dist);
+                // color = randomColor(cellId) ;
+
+                float cellCenterMask = step(0.02, m_dist); // 细胞中心为0，边界为1
+                vec3 cellColor = vec3(1.0);
+                color = mix(cellColor, randomColor(cellId),cellCenterMask);
+                
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs27 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            vec3 randomColor(vec2 seed){
+                return vec3(
+                    fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(39.346, 11.135))) * 43758.5453),
+                    fract(sin(dot(seed, vec2(73.156, 52.235))) * 43758.5453)
+                );
+            }
+
+            vec3 voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                vec2 closestCell;
+                float minDist = 1.0;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestCell = neighbor;
+                        }
+                    }
+                }
+                vec2 cellId = p +closestCell;
+
+                return vec3(minDist, cellId);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                vec3 voronoiResult = voronoi(uv);
+                float m_dist = voronoiResult.x;
+                vec2 cellId = voronoiResult.yz  ;
+                
+
+                float cellCenterMask = step(0.4, m_dist); // 细胞中心为0，边界为1
+                vec3 cellColor = vec3(1.0);
+                color = mix(randomColor(cellId), cellColor, cellCenterMask);
+                
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs28 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            // 基于两个单元格坐标生成一致的随机颜色
+            vec3 randomColorFromCells(vec2 cell1, vec2 cell2){
+                // 对两个单元格排序，确保相同的两个单元格总是产生相同的颜色
+                vec2 minCell = min(cell1, cell2);
+                vec2 maxCell = max(cell1, cell2);
+                // 组合两个单元格坐标生成种子
+                float seed = dot(minCell, vec2(127.1, 311.7)) + dot(maxCell, vec2(269.5, 183.3));
+                return vec3(
+                    fract(sin(seed * 1.0) * 43758.5453),
+                    fract(sin(seed * 2.0) * 43758.5453),
+                    fract(sin(seed * 3.0) * 43758.5453)
+                );
+            }
+
+            // Voronoi函数，返回最小距离和最近两个单元格
+            void voronoiWithCells(vec2 uv, out float minDist, out vec2 cell1, out vec2 cell2){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float dist1 = 10.0;
+                float dist2 = 10.0;
+                cell1 = vec2(0.0);
+                cell2 = vec2(0.0);
+                
+                // 找到最近的两个细胞中心
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 cellPos = neighbor + p;
+                        vec2 point = random(cellPos);
+                        point = 0.5 + 0.5*sin(u_time + 6.2831*point);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                        if(dist < dist1){
+                            dist2 = dist1;
+                            cell2 = cell1;
+                            dist1 = dist;
+                            cell1 = cellPos;
+                        } else if(dist < dist2){
+                            dist2 = dist;
+                            cell2 = cellPos;
+                        }
+                    }
+                }
+                // 融合距离：两个距离的乘积
+                minDist = dist1 * dist2;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                
+                float m_dist;
+                vec2 nearestCell1, nearestCell2;
+                voronoiWithCells(uv, m_dist, nearestCell1, nearestCell2);
+
+                float cellCenterMask = step(0.1, m_dist); // 融合区域为0，其他为1
+                
+                // 基于相邻的两个单元格生成颜色（融合区域颜色）
+                vec3 fusionColor = randomColorFromCells(nearestCell1, nearestCell2);
+
+                vec3 cellColor = vec3(1.0); // 非融合区域颜色（黑色）
+                color = mix(fusionColor, cellColor, cellCenterMask);
+
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+const fs29 = `
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float hash(float n) {
+                return fract(sin(n)*43758.5453123);
+            }
+
+            void main(){
+                vec3 center = vec3( sin( u_time ), 1.0, cos( u_time * 0.5 ) );
+                vec3 pp = vec3(0.0);
+                float length = 4.0;
+                float count = 100.0;
+                for(float i = 0.0; i < count; i++){
+                    float angle = sin(u_time*PI*0.0001)-hash(i)*PI*2.0;
+                    float radius = sqrt(hash(angle))*0.5;
+                    vec2 pos = vec2(center.x + cos(angle)*radius,center.z+sin(angle)*radius);
+                    float dist = distance(vUv, pos);
+                    length = min(length, dist);
+
+                    if(length == dist){
+                        pp.xy = pos;
+                        pp.z = i/count * vUv.x*vUv.y;
+                    }
+                }
+                vec3 shader = vec3(1.0)*(1.0 - max(0.0,dot(pp,center)));
+                gl_FragColor = vec4(pp + shader,1.0);
+            }
+`
