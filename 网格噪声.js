@@ -845,7 +845,6 @@ const fs20 = `
             }
 
             float voronoi(vec2 uv){
-                float t = u_time * 0.2;
 
                 vec2 p = floor(uv);
                 vec2 f = fract(uv);
@@ -1435,12 +1434,113 @@ const fs29 = `
             }
 
             void main(){
-                vec3 center = vec3( sin( u_time ), 1.0, cos( u_time * 0.5 ) );
+                vec3 color = vec3(0.0);
+                vec3 center = vec3(0.5, 0.0, 0.5);
                 vec3 pp = vec3(0.0);
-                float length = 4.0;
-                float count = 100.0;
+                float minDist = 1.0;
+                float count = 500.0;
+                float ceilIndex = 0.0;
                 for(float i = 0.0; i < count; i++){
-                    float angle = sin(u_time*PI*0.0001)-hash(i)*PI*2.0;
+                    // float angle = sin(u_time*PI*0.0001)-hash(i)*PI*2.0;
+                    float angle = hash(i)*PI*2.0;
+                    float radius = sqrt(hash(angle))*0.8;
+                    // vec2 pos = vec2(center.x + cos(angle)*radius,center.z+sin(angle)*radius);
+                    vec2 pos = center.xz + vec2(cos(angle), sin(angle))*radius;
+                    pos += vec2(sin(u_time + 6.2831*pos.x), cos(u_time + 6.2831*pos.y));
+                    float dist = distance(vUv, pos);
+                    
+                    float newDist = dist*minDist*10.0;
+                    if(newDist < minDist){
+                        pp.xy = pos;
+                        pp.z = i/count * vUv.x*vUv.y;
+                        ceilIndex = i;
+                        minDist = newDist;
+                    }
+                }
+
+                color += step(0.001, minDist);
+                // color += vec3(minDist);
+
+                gl_FragColor = vec4(color ,1.0);
+            }
+`;
+
+
+const fs30 = `
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float hash(float n) {
+                return fract(sin(n)*43758.5453123);
+            }
+
+            vec3 randomColorFromCells(float cellIndex){
+                    // 组合两个单元格坐标生成种子
+                    float seed = hash(cellIndex);
+                    return vec3(
+                        fract(sin(seed * 1.0) * 43758.5453),
+                        fract(sin(seed * 2.0) * 43758.5453),
+                        fract(sin(seed * 3.0) * 43758.5453)
+                    );
+                }
+
+            void main(){
+                vec3 color = vec3(0.0);
+                vec3 center = vec3(0.5, 0.0, 0.5);
+                vec3 pp = vec3(0.0);
+                float minDist = 1.0;
+                float count = 500.0;
+                float ceilIndex = 0.0;
+                for(float i = 0.0; i < count; i++){
+                    // float angle = sin(u_time*PI*0.0001)-hash(i)*PI*2.0;
+                    float angle = hash(i)*PI*2.0;
+                    float radius = sqrt(hash(angle))*0.5;
+                    vec2 pos = vec2(center.x + cos(angle)*radius,center.z+sin(angle)*radius);
+                    pos += vec2(sin(u_time + 6.2831*pos.x), cos(u_time + 6.2831*pos.y));
+                    float dist = distance(vUv, pos);
+                   
+                    float newDist = dist*minDist*10.0;
+                    if(newDist < minDist){
+                        pp.xy = pos;
+                        pp.z = i/count * vUv.x*vUv.y;
+                        ceilIndex = i;
+                        minDist = newDist;
+                    }
+                }
+
+                float mask = step(0.03, minDist);
+                vec3 maskColor = vec3(1.0);
+                color = mix(randomColorFromCells(ceilIndex) ,maskColor, mask);
+
+                // color += step(0.03, minDist);
+
+
+
+                gl_FragColor = vec4(color ,1.0);
+            }
+`;
+
+const fs31 = `
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float hash(float n) {
+                return fract(sin(n)*43758.5453123);
+            }
+
+            void main(){
+                vec3 center = vec3(0.5, 0.0, 0.5);
+                vec3 pp = vec3(0.0);
+                float length = 5.0;
+                float count = 1000.0;
+                vec2 closestCenter = vec2(0.0);
+                
+                for(float i = 0.0; i < count; i++){
+                    float angle = hash(i)*PI*2.0;
                     float radius = sqrt(hash(angle))*0.5;
                     vec2 pos = vec2(center.x + cos(angle)*radius,center.z+sin(angle)*radius);
                     float dist = distance(vUv, pos);
@@ -1449,9 +1549,225 @@ const fs29 = `
                     if(length == dist){
                         pp.xy = pos;
                         pp.z = i/count * vUv.x*vUv.y;
+                        closestCenter = pos;
                     }
                 }
-                vec3 shader = vec3(1.0)*(1.0 - max(0.0,dot(pp,center)));
-                gl_FragColor = vec4(pp + shader,1.0);
+
+                // 在每个单元中心绘制圆圈
+                float distToCenter = distance(vUv, closestCenter);
+                float circleEdge = step(0.01,distToCenter) ;
+                
+                vec3 circleColor = vec3(1.0);
+                vec3 finalColor = mix(circleColor, pp, circleEdge);
+
+                gl_FragColor = vec4(finalColor, 1.0);
             }
-`
+`;
+
+const fs32 = `
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float hash(float n) {
+                return fract(sin(n)*43758.5453123);
+            }
+
+            void main(){
+                vec3 color = vec3(0.0);
+                // vec3 center = vec3( sin( u_time ), 1.0, cos( u_time * 0.5 ) );
+                vec3 center = vec3(0.5, 0.0, 0.5);
+                vec3 pp = vec3(0.0);
+                float minDist = 4.0;
+                float count = 100.0;
+                for(float i = 0.0; i < count; i++){
+                    // float angle = sin(u_time*PI*0.0001)-hash(i)*PI*2.0;
+                    float angle = hash(i)*PI*2.0;
+                    float radius = sqrt(hash(angle))*0.8;
+                    vec2 offset = vec2(cos(angle), sin(angle))*radius;
+                    vec2 pos = center.xz + offset;
+                    float dist = distance(vUv, pos);
+                    minDist = min(minDist, dist);
+
+                    if(minDist == dist){
+                        pp.xy = pos;
+                        pp.z = i/count * vUv.x*vUv.y;
+                    }
+                }
+
+                vec3 shader = vec3(1.0)*(0.5 - max(0.0,dot(pp,center)));
+                gl_FragColor = vec4(pp + shader,1.0);
+
+                // color += smoothstep(0.01, 0.04, minDist);
+                    // color += step(0.01, minDist);
+                // color += minDist;
+                // gl_FragColor = vec4(color ,1.0);
+            }
+`;
+
+const fs33 = `
+            #define PI 3.14159265359
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float hash(float n) {
+                return fract(sin(n)*43758.5453123);
+            }
+
+            void main(){
+                vec3 color = vec3(0.0);
+                // vec3 center = vec3( sin( u_time ), 1.0, cos( u_time * 0.5 ) );
+                vec3 center = vec3(0.5, 0.0, 0.5);
+                vec3 pp = vec3(0.0);
+                float minDist = 4.0;
+                float count = 100.0;
+                for(float i = 0.0; i < count; i++){
+                    // float angle = sin(u_time*PI*0.0001)-hash(i)*PI*2.0;
+                    float angle = hash(i)*PI*2.0;
+                    float radius = sqrt(hash(angle))*0.8;
+                    vec2 offset = vec2(cos(angle), sin(angle))*radius;
+                    vec2 pos = center.xz + offset;
+                    float dist = distance(vUv, pos);
+                    minDist = min(minDist, dist);
+
+                    if(minDist == dist){
+                        pp.xy = pos;
+                        pp.z = i/count * vUv.x*vUv.y;
+                    }
+                }
+
+                float radial = distance(pp.xz, center.xz);
+                vec3 shader = vec3(-radial * 0.35);
+                gl_FragColor = vec4(vec3(0.2,0.8,0.4) + shader,1.0);
+            }
+`;
+
+const fs34 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            vec3 voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                vec2 cellIndex;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                          if( dist < minDist ) {
+                            minDist = dist;
+                            cellIndex = point;
+                        }
+                    }
+                }
+                return vec3(minDist, cellIndex);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                vec3 res = voronoi(uv);
+                float minDist = res.x;
+                vec2 cellIndex = res.yz;
+
+                // 基于UV位置的渐变基础色
+                // 上方：暖灰  下方左：深橄榄  下方右：黄绿
+                vec3 topColor = vec3(0.55, 0.55, 0.45);
+                vec3 bottomLeft = vec3(0.20, 0.25, 0.10);
+                vec3 bottomRight = vec3(0.60, 0.70, 0.15);
+                
+                // vUv.y 控制上下渐变，vUv.x 控制底部左右渐变
+                vec3 bottomColor = mix(bottomLeft, bottomRight, vUv.x);
+                vec3 baseColor = mix(bottomColor, topColor, vUv.y);
+                
+                // 每个单元格的随机亮度偏移，模拟低多边形光照
+                float brightness = dot(cellIndex, vec2(0.15, 0.65));
+                float variation = fract(sin(brightness * 43758.5453) * 2.0) * 0.3 - 0.15;
+                
+                color = baseColor + variation;
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
+
+const fs35 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+              vec3 voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                vec2 cellIndex;
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        vec2 diff = neighbor + point - f;
+                        float dist = length(diff);
+
+                          if( dist < minDist ) {
+                            minDist = dist;
+                            cellIndex = point;
+                        }
+                    }
+                }
+                return vec3(minDist, cellIndex);
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+                vec2 ipos = floor(uv);
+                vec2 fpos = fract(uv);
+
+                float m_dist = 1.0;
+                vec2 m_point;
+
+                for(int j = -1; j <= 1; j++) {
+                    for(int i = -1; i <= 1; i++) {
+                        vec2 neighbor = vec2(float(i), float(j));
+
+                        vec2 point = random(ipos + neighbor );
+                        vec2 diff = neighbor + point - fpos;
+                        float dist = length(diff);
+
+                        if( dist < m_dist ) {
+                            m_dist = dist;
+                            m_point = point;
+                        }
+                    }
+                }
+
+                float minDist = voronoi(uv).x;
+                vec2 cellIndex = voronoi(uv).yz;
+
+                color = vec3(dot(cellIndex,vec2(.3,.6)));
+
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;
