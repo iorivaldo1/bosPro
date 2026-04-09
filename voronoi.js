@@ -700,3 +700,102 @@ const fs9 = `
 
             }
         `;
+
+
+const fs10 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float sdBox( in vec2 p, in vec2 b ){
+                vec2 q = abs(p) - b;
+                return min(max(q.x,q.y),0.0) + length(max(q,0.0));
+            }
+
+            float shape( in vec2 p ){
+                // return sdBox( p, vec2(1.3, 0.3) ) - 0.1;
+                return sdBox( p - vec2(0.6, 0.4), vec2(0.4, 0.2) ) - 0.1;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                vec3 col = vec3(0.0);
+                uv *= 3.0;
+                vec2 id = floor(uv);
+                vec2 p = fract(uv);
+                p = p*2.0 - 1.0;
+                float d = shape(p);
+
+                col = mix(vec3(0.65,0.85,1.0),vec3(0.9,0.6,0.3),step(0.0,d));
+                col *= 1.0 - exp(-6.0*abs(d));
+                col *= 0.8 + 0.2*cos(31.416*d);
+                col = mix( col, vec3(1.0), 1.0-smoothstep(0.0,0.035,abs(d)) );
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+const fs11 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            float sdBox( in vec2 p, in vec2 b ){
+                vec2 q = abs(p) - b;
+                return min(max(q.x,q.y),0.0) + length(max(q,0.0));
+            }
+
+            float shape( in vec2 p ){
+                // return sdBox( p, vec2(1.3, 0.3) ) - 0.1;
+                return sdBox( p - vec2(0.6, 0.4), vec2(0.4, 0.2) ) - 0.1;
+            }
+
+            float map( in vec2 p ){
+                const float s = 2.0;         // 网格大小 (重复间距)
+                const vec2 rep = vec2(1,1);  // 重复限制：x方向左右各2个，y方向上下各1个
+
+                vec2 id = round(p/s);
+                // 它代表计算当前点偏离当前网格中心的局部相对坐标
+                vec2 off = sign(p - s*id);
+
+                float d = 1e20;
+                // 极简循环：配合前面的 off, 只需要循环计算偏向的 4 个格子即可 (IQ大神的优化)
+                // 注意循环条件应该是 < 2（即执行 0 和 1），而不是你之前写的 <= 2
+                for( int j=0; j<2; j++ ){
+                    for( int i=0; i<2; i++ ){
+                        vec2 rid = id + vec2(i,j)*off;
+                        rid = clamp(rid, -rep, rep); // 根据范围参数限制网格
+                        
+                        vec2 r = p - s*rid;          // 取模坐标点
+                        d = min( d, shape(r) ); // 不断求最小距离，合并形状
+                    }
+                }
+                return d;
+            }
+
+            void main(){
+                vec2 uv = vUv;
+                // 将原点居中在屏幕中间 (原始uv是从0到1)
+                vec2 p = uv * 2.0 - 1.0; 
+                p *=3.0; // 放大坐标系，展示更多网格范围，以便看清 clamped rep 效果
+
+                float d = map(p);
+                // vec3 col = (d>0.0) ? vec3(0.9,0.6,0.3) : vec3(0.65,0.85,1.0);
+                vec3 col = mix(vec3(0.65,0.85,1.0),vec3(0.9,0.6,0.3),step(0.0,d));
+                col *= 1.0 - exp(-6.0*abs(d));
+                col *= 0.8 + 0.2*cos(31.416*d);
+                col = mix( col, vec3(1.0), 1.0-smoothstep(0.0,0.035,abs(d)) );
+
+                // distance samples
+                // vec2 m = vec2(3.5,2.0)*sin( 0.3*u_time*vec2(1.1,1.3)+vec2(0,2));
+                // d = map( m );
+                // col = mix(col, vec3(1.0,1.0,0.0), 1.0-smoothstep(0.0, 0.007, abs(length(p-m)-abs(d))-0.015));
+                // col = mix(col, vec3(1.0,1.0,0.0), 1.0-smoothstep(0.0, 0.007, length(p-m)-0.08));
+                
+                // float xx = sdBox(p, vec2(0.6, 0.3))-0.1;
+                // col = vec3(step(0.0001,xx));
+
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
