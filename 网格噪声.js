@@ -1771,3 +1771,49 @@ const fs35 = `
 
             }
         `;
+
+const fs36 = `
+            varying vec2 vUv;
+            uniform vec2 u_mouse;
+            uniform float u_time;
+
+            vec2 random (vec2 vUv){
+                vUv = vec2( dot(vUv,vec2(127.1,311.7)), dot(vUv,vec2(269.5,183.3)) );
+                return fract(sin(vUv)*43758.5453123);
+            }
+
+            float voronoi(vec2 uv){
+                vec2 p = floor(uv);
+                vec2 f = fract(uv);
+
+                float minDist = 1.0;
+                vec2 cellIndex;
+                vec2 dist2 = vec2(1.0);
+                for(int j=-1;j<=1;j++){
+                    for(int i=-1;i<=1;i++){
+                        vec2 neighbor = vec2(float(i), float(j));
+                        vec2 point = random(neighbor + p);
+                        vec2 diff = neighbor + point - f;
+                        float dist = dot(diff,diff);
+            
+                        dist2.y = max(dist2.x,min(dist2.y,dist));
+                        dist2.x = min(dist2.x,dist);
+                    }
+                }
+                return dist2.y-dist2.x;
+            }
+
+            void main(){
+                vec2 uv = vUv ;
+                vec3 color = vec3(0.0);
+                uv *= 4.0;
+
+                float minDist = voronoi(uv);
+
+                color = vec3(minDist);
+
+
+                gl_FragColor = vec4(color, 1.0);
+
+            }
+        `;

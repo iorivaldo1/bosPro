@@ -1826,7 +1826,7 @@ const fragmentShader31 = `
                 uv += vec2(fbm(uv  + t), fbm(uv - t));
                 
                 float n = fbm(uv)*0.5 + 0.5;
-                float smoke = smoothstep(0.1, 0.8, n);
+                float smoke = smoothstep(0.1, 0.5, n);
                 vec3 color = vec3(smoke);
 
                 gl_FragColor = vec4(color, 1.0);
