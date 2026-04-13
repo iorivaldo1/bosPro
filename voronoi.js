@@ -39,16 +39,20 @@ const fs1 = `
             }
 
             void main(){
-                vec2 uv = vUv ;
+                vec2 uv = vUv;
                 vec3 color = vec3(0.0);
-                uv *= 5.0;
 
+                // Domain Repetition: 将坐标折叠到固定大小的重复域里
+                vec2 p = (uv * 2.0 - 1.0) * 5.0;
+                const float s = 1.2;
+                vec2 rp = mod(p + 0.5 * s, s) - 0.5 * s;
 
-                float minDist = voronoi(uv).x;
-                float cellIndex = voronoi(uv).y;
+                vec2 v = voronoi(rp * 4.0);
+                float minDist = v.x;
+                float cellIndex = v.y;
                 float cellCenterMask = step(0.02, minDist); // 细胞中心为0，边界为1
 
-                color = mix(vec3(1.0,0.0,0.0), vec3(cellIndex),cellCenterMask);
+                color = mix(vec3(1.0,0.0,0.0), vec3(cellIndex), cellCenterMask);
 
                 gl_FragColor = vec4(color, 1.0);
 
@@ -714,7 +718,7 @@ const fs10 = `
 
             float shape( in vec2 p ){
                 // return sdBox( p, vec2(1.3, 0.3) ) - 0.1;
-                return sdBox( p - vec2(0.6, 0.4), vec2(0.4, 0.2) ) - 0.1;
+                return sdBox( p, vec2(0.4, 0.2) );
             }
 
             void main(){
@@ -726,10 +730,12 @@ const fs10 = `
                 p = p*2.0 - 1.0;
                 float d = shape(p);
 
-                col = mix(vec3(0.65,0.85,1.0),vec3(0.9,0.6,0.3),step(0.0,d));
-                col *= 1.0 - exp(-6.0*abs(d));
-                col *= 0.8 + 0.2*cos(31.416*d);
-                col = mix( col, vec3(1.0), 1.0-smoothstep(0.0,0.035,abs(d)) );
+                col += step(0.1,d);
+
+                // col = mix(vec3(0.65,0.85,1.0),vec3(0.9,0.6,0.3),step(0.0,d));
+                // col *= 1.0 - exp(-6.0*abs(d));
+                col *= 0.8 + 0.2*cos(51.416*d);
+                // col = mix( col, vec3(1.0), 1.0-smoothstep(0.0,0.035,abs(d)) );
 
                 gl_FragColor = vec4(col, 1.0);
             }
@@ -746,8 +752,8 @@ const fs11 = `
             }
 
             float shape( in vec2 p ){
-                // return sdBox( p, vec2(1.3, 0.3) ) - 0.1;
-                return sdBox( p - vec2(0.6, 0.4), vec2(0.4, 0.2) ) - 0.1;
+                return sdBox( p, vec2(0.4, 0.2) ) - 0.1;
+                // return sdBox( p - vec2(0.6, 0.4), vec2(0.4, 0.2) ) - 0.1;
             }
 
             float map( in vec2 p ){
@@ -777,14 +783,31 @@ const fs11 = `
                 vec2 uv = vUv;
                 // 将原点居中在屏幕中间 (原始uv是从0到1)
                 vec2 p = uv * 2.0 - 1.0; 
-                p *=3.0; // 放大坐标系，展示更多网格范围，以便看清 clamped rep 效果
+                p *=5.0; // 放大坐标系，展示更多网格范围，以便看清 clamped rep 效果
 
                 float d = map(p);
                 // vec3 col = (d>0.0) ? vec3(0.9,0.6,0.3) : vec3(0.65,0.85,1.0);
                 vec3 col = mix(vec3(0.65,0.85,1.0),vec3(0.9,0.6,0.3),step(0.0,d));
-                col *= 1.0 - exp(-6.0*abs(d));
+                // col *= 1.0 - exp(-6.0*abs(d));
                 col *= 0.8 + 0.2*cos(31.416*d);
-                col = mix( col, vec3(1.0), 1.0-smoothstep(0.0,0.035,abs(d)) );
+                // col = mix( col, vec3(1.0), 1.0-smoothstep(0.0,0.035,abs(d)) );
+
+                const float s = 2.0;
+                const vec2 rep = vec2(1.0, 1.0);
+                float lineW = 0.04;
+
+                // s：绿色网格线
+                float sx = 1.0 - smoothstep(0.0, lineW, abs(mod(p.x + 0.5*s, s) - 0.5*s));
+                float sy = 1.0 - smoothstep(0.0, lineW, abs(mod(p.y + 0.5*s, s) - 0.5*s));
+                float sLine = max(sx, sy);
+                col = mix(col, vec3(0.0, 1.0, 0.0), 0.45 * sLine);
+
+                // rep：红色边界线（clamp 生效边界）
+                float repW = 0.06;
+                float rx = 1.0 - smoothstep(0.0, repW, abs(abs(p.x) - (rep.x + 0.5) * s));
+                float ry = 1.0 - smoothstep(0.0, repW, abs(abs(p.y) - (rep.y + 0.5) * s));
+                float repLine = max(rx, ry);
+                col = mix(col, vec3(1.0, 0.0, 0.0), 0.9 * repLine);
 
                 // distance samples
                 // vec2 m = vec2(3.5,2.0)*sin( 0.3*u_time*vec2(1.1,1.3)+vec2(0,2));
